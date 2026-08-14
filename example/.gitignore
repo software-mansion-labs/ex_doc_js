@@ -26,5 +26,4 @@ ex_doc_js-*.tar
 /example/node_modules/
 /example/out.json
 /example/dist/
-/vendor/typedoc/node_modules/
-/priv/typedoc/
+

@@ -1,0 +1,135 @@
+{
+  "id": 0,
+  "name": "rich",
+  "kind": 1,
+  "kindString": "Project",
+  "readme": [{ "kind": "text", "text": "The rich fixture." }],
+  "files": { "entries": { "1": "src/index.ts" } },
+  "children": [
+    {
+      "id": 1,
+      "name": "Opts",
+      "kind": 256,
+      "kindString": "Interface",
+      "comment": { "summary": [{ "kind": "text", "text": "Options." }] },
+      "sources": [{ "fileName": "client.ts", "line": 4 }],
+      "children": [
+        {
+          "id": 2,
+          "name": "retries",
+          "kind": 1024,
+          "flags": { "isOptional": true },
+          "comment": { "summary": [{ "kind": "text", "text": "How many retries." }] },
+          "type": { "type": "intrinsic", "name": "number" }
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "create",
+      "kind": 64,
+      "kindString": "Function",
+      "sources": [{ "fileName": "client.ts", "line": 12 }],
+      "signatures": [
+        {
+          "id": 11,
+          "name": "create",
+          "kind": 4096,
+          "comment": {
+            "summary": [
+              { "kind": "text", "text": "Creates a client. See " },
+              { "kind": "inline-tag", "tag": "@link", "text": "Opts", "target": 1 },
+              { "kind": "text", "text": " and " },
+              { "kind": "inline-tag", "tag": "@link", "text": "gone", "target": 999 },
+              { "kind": "text", "text": "." }
+            ],
+            "blockTags": [
+              { "tag": "@returns", "content": [{ "kind": "text", "text": "A client." }] }
+            ]
+          },
+          "parameters": [
+            {
+              "id": 12,
+              "name": "name",
+              "comment": { "summary": [{ "kind": "text", "text": "The name." }] },
+              "type": { "type": "intrinsic", "name": "string" }
+            },
+            {
+              "id": 13,
+              "name": "retries",
+              "type": { "type": "intrinsic", "name": "number" },
+              "defaultValue": "3"
+            }
+          ],
+          "type": {
+            "type": "reference",
+            "name": "Promise",
+            "typeArguments": [{ "type": "intrinsic", "name": "void" }]
+          }
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "name": "pick",
+      "kind": 64,
+      "kindString": "Function",
+      "sources": [{ "fileName": "utils.ts", "line": 5 }],
+      "signatures": [
+        {
+          "id": 21,
+          "name": "pick",
+          "kind": 4096,
+          "typeParameters": [{ "id": 22, "name": "T", "kind": 131072 }],
+          "parameters": [
+            {
+              "id": 23,
+              "name": "items",
+              "type": {
+                "type": "typeOperator",
+                "operator": "readonly",
+                "target": {
+                  "type": "array",
+                  "elementType": { "type": "typeParameter", "name": "T" }
+                }
+              }
+            },
+            {
+              "id": 24,
+              "name": "fn",
+              "type": {
+                "type": "reflection",
+                "declaration": {
+                  "id": 25,
+                  "kind": 65536,
+                  "signatures": [
+                    {
+                      "id": 26,
+                      "name": "__type",
+                      "kind": 4096,
+                      "parameters": [
+                        {
+                          "id": 27,
+                          "name": "item",
+                          "type": { "type": "typeParameter", "name": "T" }
+                        }
+                      ],
+                      "type": { "type": "intrinsic", "name": "boolean" }
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "type": {
+            "type": "union",
+            "types": [
+              { "type": "typeParameter", "name": "T" },
+              { "type": "literal", "value": null }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

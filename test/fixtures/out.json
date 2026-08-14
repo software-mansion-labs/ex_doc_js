@@ -1,0 +1,94 @@
+{
+  "id": 0,
+  "name": "mylib",
+  "kind": 1,
+  "kindString": "Project",
+  "children": [
+    {
+      "id": 1,
+      "name": "MyLib",
+      "kind": 2,
+      "kindString": "Module",
+      "children": [
+        {
+          "id": 2,
+          "name": "JS",
+          "kind": 2,
+          "kindString": "Module",
+          "children": [
+            {
+              "id": 3,
+              "name": "Client",
+              "kind": 128,
+              "kindString": "Class",
+              "comment": {
+                "summary": [
+                  { "kind": "text", "text": "The browser JS client.\n\n" },
+                  { "kind": "text", "text": "Link to the Elixir side." }
+                ]
+              },
+              "children": [
+                {
+                  "id": 4,
+                  "name": "create",
+                  "kind": 512,
+                  "kindString": "Method",
+                  "signatures": [
+                    {
+                      "id": 5,
+                      "name": "create",
+                      "kind": 4096,
+                      "comment": {
+                        "summary": [
+                          { "kind": "text", "text": "Creates a client." },
+                          { "kind": "text", "text": "" },
+                          { "kind": "text", "text": "See `Elixir.MyLib.JS.Client.connect/0`." }
+                        ]
+                      },
+                      "parameters": [
+                        {
+                          "id": 6,
+                          "name": "name",
+                          "type": { "type": "intrinsic", "name": "string" }
+                        },
+                        {
+                          "id": 7,
+                          "name": "opts",
+                          "flags": { "isOptional": true },
+                          "type": { "type": "reference", "name": "Opts" }
+                        }
+                      ],
+                      "type": { "type": "reference", "name": "Client" }
+                    }
+                  ],
+                  "overloadedSignatures": []
+                },
+                {
+                  "id": 8,
+                  "name": "connect",
+                  "kind": 512,
+                  "kindString": "Method",
+                  "signatures": [
+                    {
+                      "id": 9,
+                      "name": "connect",
+                      "kind": 4096,
+                      "comment": {
+                        "summary": [
+                          { "kind": "text", "text": "Opens the connection." }
+                        ]
+                      },
+                      "parameters": [],
+                      "type": { "type": "intrinsic", "name": "void" }
+                    }
+                  ],
+                  "overloadedSignatures": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

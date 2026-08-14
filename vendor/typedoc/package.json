@@ -1,0 +1,8 @@
+{
+  "name": "ex-doc-js-typedoc-runtime",
+  "private": true,
+  "dependencies": {
+    "typedoc": "0.28.20",
+    "typescript": "6.0.3"
+  }
+}

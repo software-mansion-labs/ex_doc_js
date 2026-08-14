@@ -1,0 +1,62 @@
+{
+  "id": 0,
+  "name": "my-sdk",
+  "kind": 1,
+  "kindString": "Project",
+  "children": [
+    {
+      "id": 1,
+      "name": "parse",
+      "kind": 64,
+      "kindString": "Function",
+      "signatures": [
+        {
+          "id": 2,
+          "name": "parse",
+          "kind": 4096,
+          "comment": {
+            "summary": [{ "kind": "text", "text": "Parses a string." }]
+          },
+          "parameters": [
+            {
+              "id": 3,
+              "name": "input",
+              "type": { "type": "intrinsic", "name": "string" }
+            },
+            {
+              "id": 4,
+              "name": "opts",
+              "flags": { "isOptional": true },
+              "type": { "type": "reference", "name": "Opts" }
+            }
+          ],
+          "type": { "type": "reference", "name": "Node" }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "stringify",
+      "kind": 64,
+      "kindString": "Function",
+      "signatures": [
+        {
+          "id": 6,
+          "name": "stringify",
+          "kind": 4096,
+          "comment": {
+            "summary": [{ "kind": "text", "text": "Serializes a node." }]
+          },
+          "parameters": [
+            {
+              "id": 7,
+              "name": "node",
+              "type": { "type": "reference", "name": "Node" }
+            }
+          ],
+          "type": { "type": "intrinsic", "name": "string" }
+        }
+      ]
+    }
+  ]
+}
