@@ -17,8 +17,20 @@ defmodule ExDocJs.Typedoc do
     context = context(decoded)
 
     modules = decoded |> build(root, context) |> place_property_apis()
+
+    modules =
+      Enum.map(modules, fn module ->
+        title =
+          case Enum.drop(module.path, length(root)) do
+            [] -> Map.fetch!(decoded, "name")
+            path -> Enum.join(path, ".")
+          end
+
+        Map.put(module, :title, title)
+      end)
+
     index = index(modules)
-    module_index = Map.new(modules, &{&1.id, Enum.join(&1.path, ".")})
+    module_index = Map.new(modules, &{&1.id, {Enum.join(&1.path, "."), &1.title}})
 
     Enum.map(modules, &render(&1, index, module_index))
   end
@@ -82,7 +94,7 @@ defmodule ExDocJs.Typedoc do
             id: Map.fetch!(node, "id"),
             kind: kind,
             path: own_path,
-            doc: module_doc_parts(node),
+            doc: summary_parts(node),
             source: module_source(node, functions, context),
             functions: functions,
             types: types,
@@ -118,11 +130,6 @@ defmodule ExDocJs.Typedoc do
           module
       end
     end)
-  end
-
-  # A project node carries its description in `readme`, not in `comment`.
-  defp module_doc_parts(node) do
-    summary_parts(node) || Map.get(node, "readme")
   end
 
   defp module_source(node, functions, context) do
@@ -313,9 +320,15 @@ defmodule ExDocJs.Typedoc do
         types: Enum.map(module.types, &render_type(&1, index, module_index)),
         properties:
           for property <- module.properties,
-              reference = module_index[property.target] || index[property.target] do
+              link_target = module_index[property.target] || index[property.target] do
+            {reference, title} =
+              case link_target do
+                {reference, title} -> {reference, title}
+                reference -> {reference, property.name}
+              end
+
             doc = markdown(property.doc, index)
-            link = "[`#{reference}`](`#{reference}`)"
+            link = "[`#{title}`](`#{reference}`)"
             %{property | doc: Enum.join(Enum.reject([doc, link], &is_nil/1), "\n\n")}
           end
     }
@@ -340,8 +353,9 @@ defmodule ExDocJs.Typedoc do
     doc = markdown(type.doc, index)
 
     doc =
-      if reference = module_index[type.id] do
-        link = "See [`#{reference}`](`#{reference}`) for methods."
+      if link_target = module_index[type.id] do
+        {reference, title} = link_target
+        link = "See [`#{title}`](`#{reference}`) for methods."
         Enum.join(Enum.reject([doc, link], &is_nil/1), "\n\n")
       else
         doc

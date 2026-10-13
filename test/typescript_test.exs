@@ -9,9 +9,15 @@ defmodule ExDocJs.ExDoc.TypeScriptTest do
 
   describe "module_data/3" do
     test "takes its source location from the module metadata" do
-      data = TypeScript.module_data(MyLib.Client, chunk(%{source_file: "src/client.ts"}), %{})
+      data =
+        TypeScript.module_data(
+          MyLib.Client,
+          chunk(%{source_file: "src/client.ts", title: "Client"}),
+          %{}
+        )
 
       assert data.id == "MyLib.Client"
+      assert data.title == "Client"
       assert data.source_file == "src/client.ts"
       assert data.source_line == 7
       assert data.default_groups == ["Types", "Properties", "Functions"]

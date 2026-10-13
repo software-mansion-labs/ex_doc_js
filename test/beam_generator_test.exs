@@ -34,8 +34,25 @@ defmodule ExDocJs.BeamGeneratorTest do
     export type SharedAPI = { inspect(): void };
     """)
 
+    File.write!(Path.join(tmp_dir, "package.json"), ~s({"name": "@example/ownership"}))
+    File.write!(Path.join(tmp_dir, "README.md"), "Duplicated setup guide")
     File.write!(tsconfig, ~s({"files": ["index.ts"]}))
     ExDocJs.TypeDocRunner.run([entry], json, tsconfig: tsconfig)
+
+    decoded = json |> File.read!() |> Jason.decode!()
+    refute Map.has_key?(decoded, "readme")
+    assert decoded["name"] == "@example/ownership"
+    parsed = ExDocJs.Typedoc.parse(decoded, root_module: "OwnershipSDK")
+
+    assert Enum.map(parsed, & &1.title) == [
+             "@example/ownership",
+             "OtherClient",
+             "OwnershipClient",
+             "OwnershipClient.Genserver",
+             "SharedAPI"
+           ]
+
+    assert is_nil(hd(parsed).doc)
 
     modules = BeamGenerator.run(ebin, json, root_module: "OwnershipSDK")
 
@@ -68,7 +85,7 @@ defmodule ExDocJs.BeamGeneratorTest do
             %{kind: :property, specs: ["readonly shared?: SharedAPI"]}} = shared
 
     assert property_doc ==
-             "[`OwnershipSDK.OwnershipClient.Genserver`](`OwnershipSDK.OwnershipClient.Genserver`)"
+             "[`OwnershipClient.Genserver`](`OwnershipSDK.OwnershipClient.Genserver`)"
 
     start_supervised!(ExDoc.Refs)
     config = ExDoc.Config.build(languages: %{typescript: ExDocJs.ExDoc.TypeScript})

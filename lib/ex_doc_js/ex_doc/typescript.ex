@@ -13,7 +13,7 @@ defmodule ExDocJs.ExDoc.TypeScript do
       docs: docs_chunk,
       language: __MODULE__,
       id: id,
-      title: id,
+      title: Map.get(metadata, :title, id),
       type: :module,
       source_line: anno,
       # ExDoc has no nil handling for a module's source path, so a project built

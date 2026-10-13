@@ -8,7 +8,6 @@ defmodule ExDocJs.TypeDocRunner do
 
     request = %{
       entryPoints: entry_points,
-      name: Keyword.get(options, :root_module),
       output: output,
       tsconfig: Keyword.get(options, :tsconfig)
     }

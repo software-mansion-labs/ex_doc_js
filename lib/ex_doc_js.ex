@@ -16,8 +16,10 @@ defmodule ExDocJs do
 
   `:entry_points` is required. `:root_module`, `:tsconfig`, and `:group` are
   optional. Set `:group` to `false` to keep ExDoc's existing module grouping.
-  `:root_module` names the page for standalone exports and prefixes every
-  class and namespace page.
+  `:root_module` names the page ID for standalone exports and prefixes every
+  class and namespace page ID. Displayed titles omit that prefix; the standalone
+  exports page uses TypeDoc's library name. README content is omitted, and
+  selected JavaScript modules and links use a theme-specific gold accent.
   """
   def configure(docs, options) when is_list(docs) and is_list(options) do
     entry_points = Keyword.fetch!(options, :entry_points)
@@ -28,8 +30,70 @@ defmodule ExDocJs do
       |> put_language()
       |> put_group(Keyword.get(options, :group, "JavaScript"))
 
-    ExDocJs.Generator.run(entry_points, options)
-    docs
+    modules = ExDocJs.Generator.run(entry_points, options)
+    put_style(docs, modules)
+  end
+
+  defp put_style(docs, modules) do
+    pages =
+      Enum.map(modules, fn module ->
+        id = module |> Atom.to_string() |> String.trim_leading("Elixir.")
+        "#{id}.html"
+      end)
+
+    page_links = Enum.map_join(pages, ", ", &~s|[href="#{&1}"]|)
+
+    doc_links =
+      Enum.map_join(modules, ", ", fn module ->
+        id = module |> Atom.to_string() |> String.trim_leading("Elixir.")
+        ~s|[href="#{id}.html"], [href^="#{id}.html#"]|
+      end)
+
+    style = """
+    <style>
+    body {
+      --exdoc-js-accent: #f2d600;
+      --exdoc-js-text: #9a8200;
+    }
+    body.dark {
+      --exdoc-js-accent: #e2c45a;
+      --exdoc-js-text: var(--exdoc-js-accent);
+    }
+
+    .sidebar .full-list > li:has(> a:is(#{page_links})) {
+      --sidebarActiveItem: var(--exdoc-js-text);
+      --sidebarLanguageAccentBar: var(--exdoc-js-accent);
+      --main: var(--exdoc-js-accent);
+    }
+    .exdoc-js-page .content-inner {
+      --textDetailAccent: var(--exdoc-js-accent);
+    }
+    .content-inner a:is(#{doc_links}),
+    .exdoc-js-page .content-inner a[href^="#"] {
+      --main: var(--exdoc-js-accent);
+      --mainLight: var(--exdoc-js-accent);
+      --link-color: var(--exdoc-js-text);
+      --link-visited-color: var(--exdoc-js-text);
+    }
+    </style>
+    <script>
+    (() => {
+      const pages = #{Jason.encode!(pages)};
+      const update = () => {
+        const page = decodeURIComponent(window.location.pathname.split("/").pop());
+        document.documentElement.classList.toggle("exdoc-js-page", pages.includes(page));
+      };
+      update();
+      window.addEventListener("exdoc:loaded", update);
+    })();
+    </script>
+    """
+
+    previous = Keyword.get(docs, :before_closing_head_tag, fn _ -> "" end)
+
+    Keyword.put(docs, :before_closing_head_tag, fn format ->
+      previous.(format) <> if(format == :html and modules != [], do: style, else: "")
+    end)
   end
 
   defp put_language(docs) do

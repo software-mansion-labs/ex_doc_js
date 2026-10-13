@@ -47,7 +47,7 @@ defmodule ExDocJs.BeamGenerator do
         Enum.map(module.properties, &property_entry/1) ++
         Enum.map(module.functions, &function_entry/1)
 
-    metadata = put_source(%{language: :typescript}, module.source)
+    metadata = put_source(%{language: :typescript, title: module.title}, module.source)
 
     {:docs_v1, line(module.source), :typescript, "text/markdown", or_none(module.doc), metadata,
      entries}

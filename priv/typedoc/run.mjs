@@ -2,9 +2,8 @@ import fs from 'node:fs/promises'
 import { Application } from 'typedoc'
 
 const request = JSON.parse(await fs.readFile(process.argv[2], 'utf8'))
-const options = { entryPoints: request.entryPoints }
+const options = { entryPoints: request.entryPoints, readme: "none" }
 
-if (request.name) options.name = request.name
 if (request.tsconfig) options.tsconfig = request.tsconfig
 
 const app = await Application.bootstrapWithPlugins(options)

@@ -3,6 +3,7 @@ defmodule ExDocJsTest do
 
   test "generates inputs and preserves existing docs options" do
     docs = [
+      before_closing_head_tag: fn format -> "existing-#{format}" end,
       extras: ["README.md"],
       formatters: ["html"],
       languages: %{custom: CustomLanguage},
@@ -18,6 +19,22 @@ defmodule ExDocJsTest do
         root_module: "ConfiguredSdk",
         tsconfig: "example/tsconfig.json"
       )
+
+    head = configured[:before_closing_head_tag]
+    assert head.(:html) =~ "existing-html"
+    assert head.(:html) =~ ~s|[href="ConfiguredSdk.html"]|
+    assert head.(:html) =~ ~s|[href^="ConfiguredSdk.html#"]|
+    assert head.(:html) =~ "--link-visited-color: var(--exdoc-js-text)"
+    assert head.(:html) =~ "--sidebarActiveItem: var(--exdoc-js-text)"
+    assert head.(:html) =~ "--sidebarLanguageAccentBar: var(--exdoc-js-accent)"
+    assert head.(:html) =~ "--textDetailAccent: var(--exdoc-js-accent)"
+    assert head.(:html) =~ "--mainLight: var(--exdoc-js-accent)"
+    assert head.(:html) =~ ".exdoc-js-page .content-inner"
+    assert head.(:html) =~ ~s|classList.toggle("exdoc-js-page", pages.includes(page))|
+    assert head.(:html) =~ ~s|window.addEventListener("exdoc:loaded", update)|
+    refute head.(:html) =~ "body:has(.sidebar"
+    refute head.(:html) =~ "--sidebarItem:"
+    assert head.(:epub) == "existing-epub"
 
     assert configured[:extras] == ["README.md"]
     assert configured[:formatters] == ["html"]

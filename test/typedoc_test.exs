@@ -43,7 +43,7 @@ defmodule ExDocJs.TypedocTest do
       assert [%{path: ["Rich"], doc: module_doc, source: module_source, types: [opts]}] =
                Typedoc.parse(rich_fixture())
 
-      assert module_doc == "The rich fixture."
+      assert is_nil(module_doc)
       assert module_source == %{file: "src/index.ts", line: 1}
 
       assert opts.name == "Opts"

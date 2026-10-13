@@ -53,18 +53,27 @@ language adapters remain configured.
 `entry_points` is required and accepts one or more TypeScript files. The
 following options are available:
 
-- `root_module` sets the namespace for all JavaScript pages. TypeDoc's project
-  name is used when it is omitted. With `root_module: "JS"`, standalone exports
-  appear on `JS`, and a `Popcorn` class appears on `JS.Popcorn`.
+- `root_module` sets the internal namespace for all JavaScript page IDs. TypeDoc's project
+  name is used when it is omitted. With `root_module: "JSLib"`, standalone exports
+  have the page ID `JSLib`, and a `Popcorn` class has the page ID `JSLib.Popcorn`.
+  Displayed titles omit this namespace: the standalone exports page uses the
+  JavaScript library name, and class pages use their exported names. Page IDs
+  retain the namespace to avoid collisions with Elixir modules.
   An object type alias used by exactly one class property gets a page under
-  that class: `genserver: GenServer` becomes `JS.Popcorn.Genserver`.
-  Shared and standalone aliases keep their names under the namespace.
+  that class: `genserver: GenServer` becomes `JSLib.Popcorn.Genserver`.
+  Shared and standalone aliases keep their page IDs under the namespace.
 - `tsconfig` selects a TypeScript configuration file.
 - `group` changes the TypeScript sidebar group. It defaults to `"JavaScript"`.
   Set it to `false` to keep the existing grouping unchanged.
 
 ExDocJs raises if another language adapter already owns `:typescript`. It does
 not replace that adapter or a user-supplied `source_url_pattern`.
+
+Selected JavaScript modules and links to JavaScript documentation use a yellow
+accent with theme-specific yellow text and bright yellow bars in light mode. Unselected modules keep
+ExDoc's normal text color. Links to Elixir documentation retain ExDoc's purple.
+The plugin preserves existing head callbacks.
+TypeDoc README content is omitted; use ExDoc extra pages for installation and guides.
 
 Exported interfaces and type aliases appear in the containing page's Types
 section. Aliases with methods also link to their callable API page.
