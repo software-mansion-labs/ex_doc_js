@@ -1,6 +1,8 @@
 defmodule ExDocJs.Typedoc do
   @moduledoc false
 
+  alias ExDocJs.Spec
+
   @type_alias_kind 2_097_152
   # Containers own callable members; interfaces and aliases also get type entries.
   @container_kinds [2, 4, 8, 128, @type_alias_kind]
@@ -81,7 +83,8 @@ defmodule ExDocJs.Typedoc do
           id: id,
           name: name,
           target: target,
-          definition: property |> to_property() |> render_property(),
+          definition: property |> Spec.property() |> Spec.text(),
+          spec: Spec.property(property),
           source: source(property, context),
           doc: summary_parts(property)
         }
@@ -206,6 +209,7 @@ defmodule ExDocJs.Typedoc do
           do: {Map.get(tag, "tag", ""), Map.get(tag, "content", [])}
 
     %{
+      spec: Spec.signature(signature, Map.get(signature, "name", "")),
       comment: Map.get(comment, "summary", []),
       block_tags: block_tags,
       parameters: to_parameters(Map.get(signature, "parameters", [])),
@@ -242,7 +246,8 @@ defmodule ExDocJs.Typedoc do
       name: Map.get(node, "name", ""),
       doc: summary_parts(node),
       source: source(node, context),
-      definition: type_definition(node),
+      definition: node |> Spec.definition() |> Spec.text(),
+      spec: Spec.definition(node),
       properties: properties
     }
   end
@@ -329,7 +334,12 @@ defmodule ExDocJs.Typedoc do
 
             doc = markdown(property.doc, index)
             link = "[`#{title}`](`#{reference}`)"
-            %{property | doc: Enum.join(Enum.reject([doc, link], &is_nil/1), "\n\n")}
+
+            %{
+              property
+              | doc: Enum.join(Enum.reject([doc, link], &is_nil/1), "\n\n"),
+                spec: Spec.resolve(property.spec, index)
+            }
           end
     }
   end
@@ -339,7 +349,8 @@ defmodule ExDocJs.Typedoc do
       Enum.map(function.signatures, fn signature ->
         %{
           signature
-          | comment: markdown(signature.comment, index),
+          | spec: Spec.resolve(signature.spec, index),
+            comment: markdown(signature.comment, index),
             block_tags:
               for({tag, parts} <- signature.block_tags, do: {tag, markdown(parts, index)}),
             parameters: Enum.map(signature.parameters, &render_doc(&1, index))
@@ -364,6 +375,7 @@ defmodule ExDocJs.Typedoc do
     %{
       type
       | doc: doc,
+        spec: Spec.resolve(type.spec, index),
         properties: Enum.map(type.properties, &render_doc(&1, index))
     }
   end
@@ -397,84 +409,13 @@ defmodule ExDocJs.Typedoc do
   defp part_text(_part, _index), do: ""
 
   def signature_string(signature, name, async \\ false) do
-    params = Enum.map_join(signature.parameters, ", ", &render_parameter/1)
-    generics = generics(signature.type_parameters)
-
-    declaration =
-      case {params, signature.return_type} do
-        {"", ""} -> "#{name}#{generics}()"
-        {"", return} -> "#{name}#{generics}(): #{return}"
-        {params, ""} -> "#{name}#{generics}(#{params})"
-        {params, return} -> "#{name}#{generics}(#{params}): #{return}"
-      end
-
-    async_prefix(declaration, async)
+    signature.spec |> Spec.rename(name) |> Spec.async(async) |> Spec.text()
   end
 
   def heading_string(signature, name, async \\ false) do
     params = Enum.map_join(signature.parameters, ", ", &render_heading_parameter/1)
     async_prefix("#{name}(#{params})", async)
   end
-
-  defp type_definition(node) do
-    name = node["name"] <> type_parameters_string(node)
-
-    case node["kind"] do
-      @interface_kind ->
-        "interface #{name} " <> object_string(node)
-
-      @type_alias_kind ->
-        value = if type = node["type"], do: type_string(type), else: object_string(node)
-        "type #{name} = #{value}"
-    end
-  end
-
-  defp type_parameters_string(node) do
-    node
-    |> Map.get("typeParameters", [])
-    |> Enum.map(fn parameter ->
-      constraint = if type = parameter["type"], do: " extends " <> type_string(type), else: ""
-      default = if type = parameter["default"], do: " = " <> type_string(type), else: ""
-      parameter["name"] <> constraint <> default
-    end)
-    |> generics()
-  end
-
-  defp object_string(node) do
-    members =
-      Enum.flat_map(Map.get(node, "children", []), fn child ->
-        case child do
-          %{"signatures" => signatures, "name" => name} ->
-            Enum.map(signatures, &signature_string(to_signature(&1), property_name(name)))
-
-          _ ->
-            [child |> to_property() |> render_property()]
-        end
-      end)
-
-    signatures =
-      for signature <- Map.get(node, "signatures", []) do
-        signature_string(to_signature(signature), "")
-      end
-
-    body =
-      Enum.map_join(members ++ signatures, "\n", fn member ->
-        "  " <> String.replace(member, "\n", "\n  ") <> ";"
-      end)
-
-    "{\n#{body}\n}"
-  end
-
-  defp generics([]), do: ""
-  defp generics(names), do: "<" <> Enum.join(names, ", ") <> ">"
-
-  defp render_parameter(%{rest: true} = p), do: "..." <> annotate(p.name, p.type)
-
-  defp render_parameter(%{default: default} = p) when is_binary(default),
-    do: annotate(p.name, p.type) <> " = " <> default
-
-  defp render_parameter(%{optional: true} = p), do: annotate(p.name <> "?", p.type)
-  defp render_parameter(p), do: annotate(p.name, p.type)
 
   defp render_heading_parameter(%{rest: true} = parameter), do: "..." <> parameter.name
 
@@ -484,22 +425,6 @@ defmodule ExDocJs.Typedoc do
   defp render_heading_parameter(%{optional: true} = parameter), do: parameter.name <> "?"
   defp render_heading_parameter(parameter), do: parameter.name
 
-  defp render_property(property) do
-    name = property_name(property.name)
-    name = if property.optional, do: name <> "?", else: name
-    declaration = annotate(name, property.type)
-
-    if property.readonly, do: "readonly " <> declaration, else: declaration
-  end
-
-  defp property_name("[" <> _ = name), do: name
-
-  defp property_name(name) do
-    if Regex.match?(~r/^(?:[$\p{L}_][$\p{L}\p{N}_]*|\d+)$/u, name),
-      do: name,
-      else: Jason.encode!(name)
-  end
-
   defp promise_return?(%{return_type: "Promise"}), do: true
   defp promise_return?(%{return_type: "Promise<" <> _}), do: true
   defp promise_return?(_signature), do: false
@@ -507,76 +432,5 @@ defmodule ExDocJs.Typedoc do
   defp async_prefix(declaration, true), do: "async " <> declaration
   defp async_prefix(declaration, false), do: declaration
 
-  defp annotate(name, ""), do: name
-  defp annotate(name, type), do: "#{name}: #{type}"
-
-  defp type_string(nil), do: ""
-
-  defp type_string(%{"type" => "intrinsic", "name" => name}), do: name
-  defp type_string(%{"type" => "typeParameter", "name" => name}), do: name
-  defp type_string(%{"type" => "literal", "value" => nil}), do: "null"
-
-  defp type_string(%{"type" => "literal", "value" => value}) when is_binary(value),
-    do: Jason.encode!(value)
-
-  defp type_string(%{"type" => "literal", "value" => value}), do: to_string(value)
-
-  defp type_string(%{"type" => "reference", "name" => name} = type) do
-    name <> generics(Enum.map(Map.get(type, "typeArguments", []), &type_string/1))
-  end
-
-  defp type_string(%{"type" => "typeOperator", "operator" => operator, "target" => target}) do
-    "#{operator} #{type_string(target)}"
-  end
-
-  defp type_string(%{"type" => "array", "elementType" => element}) do
-    case element do
-      %{"type" => kind} when kind in ["union", "intersection"] ->
-        "(" <> type_string(element) <> ")[]"
-
-      _ ->
-        type_string(element) <> "[]"
-    end
-  end
-
-  defp type_string(%{"type" => "union", "types" => types}),
-    do: Enum.map_join(types, " | ", &type_string/1)
-
-  defp type_string(%{"type" => "intersection", "types" => types}),
-    do: Enum.map_join(types, " & ", &type_string/1)
-
-  defp type_string(%{"type" => "tuple", "elements" => elements}),
-    do: "[" <> Enum.map_join(elements, ", ", &type_string/1) <> "]"
-
-  defp type_string(%{"type" => "indexedAccess", "objectType" => object, "indexType" => index}),
-    do: type_string(object) <> "[" <> type_string(index) <> "]"
-
-  defp type_string(%{"type" => "mapped"} = type) do
-    readonly = mapped_modifier(type["readonlyModifier"], "readonly ")
-    optional = mapped_modifier(type["optionalModifier"], "?")
-    rename = if name = type["nameType"], do: " as " <> type_string(name), else: ""
-    parameter = type["parameter"] <> " in " <> type_string(type["parameterType"]) <> rename
-    template = type_string(type["templateType"]) |> String.replace("\n", "\n  ")
-    "{\n  #{readonly}[#{parameter}]#{optional}: #{template};\n}"
-  end
-
-  # A function type is a reflection whose declaration carries call signatures.
-  defp type_string(%{"type" => "reflection", "declaration" => declaration}) do
-    case Map.get(declaration, "signatures", []) do
-      [signature | _] ->
-        signature = to_signature(signature)
-        params = Enum.map_join(signature.parameters, ", ", &render_parameter/1)
-        "(#{params}) => #{signature.return_type}"
-
-      [] ->
-        object_string(declaration)
-    end
-  end
-
-  defp type_string(%{"type" => "unknown", "name" => name}), do: name
-  defp type_string(_), do: "unknown"
-
-  defp mapped_modifier(nil, _modifier), do: ""
-  defp mapped_modifier("+", modifier), do: modifier
-  defp mapped_modifier("-", modifier), do: "-" <> modifier
+  defp type_string(type), do: type |> Spec.type() |> Spec.text()
 end

@@ -1,7 +1,7 @@
 defmodule ExDocJs.BeamGenerator do
   @moduledoc false
 
-  alias ExDocJs.Typedoc
+  alias ExDocJs.{Spec, Typedoc}
 
   @doc """
   Reads TypeDoc `out.json` and writes one fake `.beam` per module into `ebin_dir`,
@@ -67,6 +67,10 @@ defmodule ExDocJs.BeamGenerator do
           &Typedoc.signature_string(&1, function.name, function.async)
         )
       )
+      |> Map.put(
+        :linked_specs,
+        Enum.map(function.signatures, &Spec.async(&1.spec, function.async))
+      )
       |> put_defaults(arity - min_required)
       |> put_variadic(variadic?(function))
       |> put_source(function.source)
@@ -79,12 +83,17 @@ defmodule ExDocJs.BeamGenerator do
 
   defp type_entry(type) do
     {{:type, String.to_atom(Typedoc.type_name(type.name)), 0}, line(type.source), [type.name],
-     or_none(type_doc(type)), put_source(%{specs: [type.definition]}, type.source)}
+     or_none(type_doc(type)),
+     put_source(%{specs: [type.definition], linked_specs: [type.spec]}, type.source)}
   end
 
   defp property_entry(property) do
     # EEP-48 has no property kind; the language adapter reads it from metadata.
-    metadata = put_source(%{kind: :property, specs: [property.definition]}, property.source)
+    metadata =
+      put_source(
+        %{kind: :property, specs: [property.definition], linked_specs: [property.spec]},
+        property.source
+      )
 
     {{:function, String.to_atom(property.name), 0}, line(property.source), [property.name],
      or_none(property.doc), metadata}

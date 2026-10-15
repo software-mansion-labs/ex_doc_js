@@ -77,6 +77,9 @@ TypeDoc README content is omitted; use ExDoc extra pages for installation and gu
 
 Exported interfaces and type aliases appear in the containing page's Types
 section. Aliases with methods also link to their callable API page.
+Type names in specs link to their documented definitions, including references
+inside arrays, callbacks, and generic arguments. Generic parameters and types
+without documented targets remain plain text.
 
 ## Bundled TypeDoc
 

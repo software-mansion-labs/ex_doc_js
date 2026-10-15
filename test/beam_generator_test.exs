@@ -99,8 +99,11 @@ defmodule ExDocJs.BeamGeneratorTest do
              type: :property,
              signature: "genserver",
              id: "genserver/0",
-             source_specs: ["readonly genserver: OwnershipServer"]
+             source_specs: [property_spec]
            } = property
+
+    assert ExDocJs.ExDoc.TypeScript.format_spec(property_spec) ==
+             "readonly genserver: OwnershipServer"
 
     {:docs_v1, _, _, _, _, _, entries} = Code.fetch_docs(OwnershipSDK)
 

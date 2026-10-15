@@ -38,7 +38,7 @@ defmodule ExDocJs.ExDoc.TypeScript do
       signature: signature,
       source_file: Map.get(metadata, :source_file),
       source_line: anno,
-      specs: Map.fetch!(metadata, :specs),
+      specs: Map.get(metadata, :linked_specs, Map.fetch!(metadata, :specs)),
       type: kind
     }
   end
@@ -52,7 +52,7 @@ defmodule ExDocJs.ExDoc.TypeScript do
       signature: signature,
       source_file: Map.get(metadata, :source_file),
       source_line: anno,
-      specs: Map.fetch!(metadata, :specs),
+      specs: Map.get(metadata, :linked_specs, Map.fetch!(metadata, :specs)),
       type: :type
     }
   end
@@ -70,10 +70,10 @@ defmodule ExDocJs.ExDoc.TypeScript do
   def parse_module(string, mode), do: ExDoc.Language.Elixir.parse_module(string, mode)
 
   @impl true
-  def autolink_spec(spec, _config), do: ExDoc.Utils.h(spec)
+  def autolink_spec(spec, config), do: ExDocJs.Spec.html(spec, config)
 
   @impl true
-  def format_spec(spec), do: spec
+  def format_spec(spec), do: ExDocJs.Spec.text(spec)
 
   @impl true
   def format_spec_attribute(%{type: :function}), do: "@spec"
